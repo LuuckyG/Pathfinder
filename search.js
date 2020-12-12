@@ -1,28 +1,86 @@
-
 class Searcher {
-    constructor(x, y, size, rows, cols) {
-        this.x = x;
-        this.y = y;
-        this.cols = cols;
-        this.rows = rows;
-        this.maxIndex = cols * rows - 1;
-        this.size = size;
+  constructor(x, y, width, height, rows, cols) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.rows = rows;
+    this.cols = cols;
+    this.winnerIdx = 0;
+  }
+
+  walk() {
+    for (var i = 0; i < openSet.length; i++) {
+      if (openSet[i].f < openSet[this.winnerIdx].f) {
+        this.winnerIdx = i;
+      }
     }
 
-    walk (x, y) {
-        if (this.x + x >= this.cols - 1) { this.x = (this.cols - 1); } 
-        else if (this.x + x <= 0) { this.x = 0; } 
-        else { this.x += x; }
+    var current = openSet[this.winnerIdx];
+    this.reconstructPath();
 
-        if (this.y + y >= this.rows - 1) { this.y = (this.rows - 1); } 
-        else if (this.y + y <= 0) { this.y = 0; } 
-        else { this.y += y; }
+    if (current === end) {
+      this.removeFromArray(openSet, current);
+      this.removeFromArray(closedSet, current);
+      path.push(current);
+      console.log("Finished");
+      return;
     }
 
-    show() {
-        strokeWeight(3);
-        stroke(0);
-        fill(color('magenta'));
-        rect(this.x * this.size, this.y * this.size, this.size);
+    this.removeFromArray(openSet, current);
+    closedSet.push(current);
+
+    // distance is 1 to neighbors
+    var tentativeGScore = current.g + 1;
+    for (var i = 0; i < current.neighbors.length; i++) {
+      var neighbor = current.neighbors[i];
+
+      if (neighbor.blocked) {
+        console.log(neighbor);
+      }
+
+      if (closedSet.includes(neighbor)) {
+        continue;
+      }
+      if (!openSet.includes(neighbor)) {
+        neighbor.previous = current;
+        neighbor.g = tentativeGScore;
+        neighbor.h = neighbor.heuristic();
+        neighbor.f = neighbor.g + neighbor.h;
+        openSet.push(neighbor);
+      }
+      if (tentativeGScore < neighbor.g) {
+        neighbor.previous = current;
+        neighbor.g = tentativeGScore;
+        neighbor.h = neighbor.heuristic();
+        neighbor.f = neighbor.g + neighbor.h;
+      }
     }
+  }
+
+  removeFromArray(arr, element) {
+    for (var i = arr.length - 1; i >= 0; i--) {
+      if (arr[i] == element) {
+        arr.splice(i, 1);
+      }
+    }
+  }
+
+  reconstructPath() {
+    path = [];
+    path.push(openSet[this.winnerIdx]);
+    var current = openSet[this.winnerIdx];
+
+    while (current.previous) {
+      path.push(current.previous);
+      current = current.previous;
+    }
+  }
+
+  show() {
+    strokeWeight(3);
+    stroke(0);
+    fill(color("magenta"));
+    rect(this.x * this.width, this.y * this.height, this.width, this.height);
+  }
 }
